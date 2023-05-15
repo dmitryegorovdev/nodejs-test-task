@@ -22,6 +22,7 @@ model Product {
 model Customer {
   id        Int      @id @default(value: autoincrement())
   name      String   @db.VarChar(255)
+  stripeId  String?  @db.VarChar(255)
   createdAt DateTime @default(value: now())
   Cart      Cart[]
 

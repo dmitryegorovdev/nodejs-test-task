@@ -3,12 +3,47 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { CreateCartDto } from "../dto/create-cart.dto";
 import { AddProductToCartDto } from "../dto/add-product-to-cart.dto";
 import * as moment from "moment";
+import Stripe from "stripe";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class CartService {
   private readonly logger = new Logger(CartService.name);
+  private readonly stripe;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(private readonly prisma: PrismaService, private readonly config: ConfigService) {
+    this.stripe = new Stripe(this.config.get("STRIPE_SK"), {
+      apiVersion: "2022-11-15"
+    });
+  }
+
+  async makePayment(cartId: number) {
+    try {
+      this.logger.log(`Invoked makePayment`);
+
+      const cartContent = await this.prisma.productCart.findMany({
+        where: { cartId },
+        select: {
+          product: true
+        }
+      });
+
+      const cartData = await this.prisma.cart.findUnique({ where: { id: cartId }, select: { customer: true } });
+
+      if (!cartData.customer.stripeId) {
+        const res = await this.stripe.customer.create({
+          email: "<customer_email_from_cartData.customer>", // failed to complete on time,
+          payment_method: "pm_card_visa",
+          invoice_settings: {
+            default_payment_method: "pm_card_visa"
+          }
+        });
+
+        //....code for save customerId to DB
+      }
+    } catch (error) {
+
+    }
   }
 
   async addProductToCart(data: AddProductToCartDto) {
