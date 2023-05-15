@@ -3,12 +3,16 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { CreateCartDto } from "../dto/create-cart.dto";
 import { AddProductToCartDto } from "../dto/add-product-to-cart.dto";
 import * as moment from "moment";
+import Stripe from "stripe";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class CartService {
   private readonly logger = new Logger(CartService.name);
+  private readonly stripe;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(private readonly prisma: PrismaService, private readonly config: ConfigService) {
+    this.stripe = new Stripe(this.config.get("STRIPE_SK"));
   }
 
   async addProductToCart(data: AddProductToCartDto) {
